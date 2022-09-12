@@ -7,6 +7,8 @@
 #include <errorrep.h>
 
 #include <cstdint>
+#include <unordered_map>
+#include <memory>
 
 // Engine
 #include "Engine/Engine.h"

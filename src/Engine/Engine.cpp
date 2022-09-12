@@ -54,34 +54,62 @@ bool Engine::patchBytes(LPVOID dest, const LPVOID src, size_t size)
 	return false;
 }
 
-
-// Caller is responsible for calling original - this is a destructive detour
-bool Engine::detourFunction(LPVOID originalFunc, LPVOID newFunc)
+trampolineInfo* Engine::getTrampoline(uint64_t id)
 {
+	if( !trampolines.contains(id) )
+		return nullptr;
+
+	return &trampolines[id];
+}
+
+// Caller is responsible for calling trampolineReturn
+bool Engine::detourFunction(uint64_t id, LPVOID originalFunc, LPVOID newFunc)
+{
+	trampolineInfo info;
+	info.originalFunction = originalFunc;
+	info.newFunction = newFunc;
+
+
 	// Find a suitable place to create a code cave
 	auto search = reinterpret_cast<uintptr_t>(originalFunc) - 0x2000;
-	LPVOID trampoline = nullptr, originalTrampoline = nullptr;
-	while( !trampoline )
+	while( !info.trampoline )
 	{
-		trampoline = ::VirtualAlloc(reinterpret_cast<LPVOID>(search), sizeof(JMP_ABS), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+		info.trampoline = ::VirtualAlloc(reinterpret_cast<LPVOID>(search), 1024, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 		search += 0x200;
 	}
-	originalTrampoline = trampoline;
+	info.overwrittenBytes = std::make_unique<uint8_t*>(new uint8_t[sizeof(JMP_REL)]);
+
 
 	// copy the bytes we're going to overwrite into our trampoline
-	::memcpy(trampoline, originalFunc, sizeof(JMP_REL));
+	::memcpy(*info.overwrittenBytes, originalFunc, sizeof(JMP_REL));
+	::memcpy(info.trampoline, *info.overwrittenBytes, sizeof(JMP_REL));
 
 	// move past written bytes
-	trampoline = reinterpret_cast<LPVOID>(reinterpret_cast<uintptr_t>(trampoline) + sizeof(JMP_REL));
+	auto trampoline = reinterpret_cast<LPVOID>(reinterpret_cast<uintptr_t>(info.trampoline) + sizeof(JMP_REL));
 
 	// Write our trampoline to newFunc
 	auto tramp = static_cast<JMP_ABS*>(trampoline);
 	tramp->opcode = 0x25'FF; // reversed
 	tramp->address = reinterpret_cast<uintptr_t>(newFunc);
 
+	// move past written bytes
+	trampoline = reinterpret_cast<LPVOID>(reinterpret_cast<uintptr_t>(trampoline) + sizeof(JMP_REL) + 1);
+
+	// Store our trampoline data
+	info.returnTrampoline = reinterpret_cast<fnFunc>(trampoline);
+	trampolines[id] = std::move(info);
+
+	// Write our trampoline to originalFunc (for returning)
+	auto tramp2 = static_cast<JMP_REL*>(trampoline);
+	tramp2->opcode = 0xE9; // relative jmp
+	tramp2->address = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(originalFunc) - reinterpret_cast<uintptr_t>(trampoline) + 1);
+
 	// Write our jmp to the trampoline
 	JMP_REL jmp;
-	jmp.opcode = 0xE9;
-	jmp.address = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(originalTrampoline) - reinterpret_cast<uintptr_t>(originalFunc));
-	return patchBytes(originalFunc, &jmp, sizeof(JMP_REL));
+	jmp.opcode = 0xE9; // relative jmp
+	jmp.address = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(info.trampoline) - reinterpret_cast<uintptr_t>(originalFunc));
+	const auto ret = patchBytes(originalFunc, &jmp, sizeof(JMP_REL));
+
+	trampolines[id] = std::move(info);
+	return ret;
 }

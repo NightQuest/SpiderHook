@@ -14,16 +14,17 @@ set(base_files
 		src/preCompiled.cpp
 		src/preCompiled.h)
 
-set(class_files
-	)
+set(engine_files
+		src/Engine/Engine.cpp
+		src/Engine/Engine.h)
 
 set(source_files
 		${base_files}
-		${class_files})
+		${engine_files})
 
 # Set a group for Visual Studio
 source_group("" FILES ${base_files})
-source_group("Classes" FILES ${class_files})
+source_group("Engine" FILES ${engine_files})
 
 add_library(SpiderHook MODULE ${source_files})
 

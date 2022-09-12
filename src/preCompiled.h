@@ -6,6 +6,10 @@
 #include <Windows.h>
 #include <errorrep.h>
 
+#include <cstdint>
+
+// Engine
+#include "Engine/Engine.h"
 
 // Application
 #include "Application.h"

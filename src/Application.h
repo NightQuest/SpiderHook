@@ -10,4 +10,5 @@ public:
 	void OnDetach();
 
 private:
+	Engine* eng = nullptr;
 };

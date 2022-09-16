@@ -1,7 +1,7 @@
 ﻿#include "preCompiled.h"
 
 using ReportFault_type = EFaultRepRetVal (APIENTRY*)(LPEXCEPTION_POINTERS, DWORD);
-ReportFault_type real_ReportFault = nullptr;
+ReportFault_type g_real_ReportFault = nullptr;
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
@@ -19,12 +19,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 
 				// Make sure we were able to load it
 				if( !hFaultRep )
-					::ExitProcess(1);
+					::ExitProcess(EXIT_FAILURE);
 
 				// Create our function pointer
-				real_ReportFault = reinterpret_cast<ReportFault_type>(::GetProcAddress(hFaultRep, "ReportFault"));
-				if( !real_ReportFault )
-					::ExitProcess(1);
+				g_real_ReportFault = reinterpret_cast<ReportFault_type>(::GetProcAddress(hFaultRep, "ReportFault"));
+				if( !g_real_ReportFault )
+					::ExitProcess(EXIT_FAILURE);
 			}
 
 			app.OnAttach();
@@ -38,7 +38,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 			{
 				::FreeLibrary(hFaultRep);
 				hFaultRep = nullptr;
-				real_ReportFault = nullptr;
+				g_real_ReportFault = nullptr;
 			}
 
 			app.OnDetach();
@@ -58,12 +58,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 EFaultRepRetVal APIENTRY fake_ReportFault(LPEXCEPTION_POINTERS pep, DWORD dwOpt)
 {
 	// Make sure we have a function to call, and gracefully error otherwise
-	if( !real_ReportFault )
+	if( !g_real_ReportFault )
 	{
 		::MessageBox(nullptr, "Calling ReportFault after it was unloaded!", "Error", MB_OK | MB_ICONERROR);
 		return EFaultRepRetVal::frrvErr;
 	}
 
 	// Call the real ReportFault
-	return real_ReportFault(pep, dwOpt);
+	return g_real_ReportFault(pep, dwOpt);
 }

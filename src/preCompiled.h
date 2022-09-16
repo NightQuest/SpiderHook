@@ -5,10 +5,15 @@
 #define NOMINMAX
 #include <Windows.h>
 #include <errorrep.h>
+#include <dwmapi.h>
+#include <commctrl.h>
 
 #include <cstdint>
 #include <unordered_map>
 #include <memory>
+#include <thread>
+#include <mutex>
+#include <regex>
 
 // Engine
 #include "Engine/Engine.h"

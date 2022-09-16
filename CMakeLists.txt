@@ -33,6 +33,8 @@ add_library(SpiderHook MODULE ${source_files})
 # Make sure the output filename is faultrep.dll
 set_target_properties(SpiderHook PROPERTIES OUTPUT_NAME "faultrep")
 
+target_link_libraries(SpiderHook PRIVATE Comctl32.lib dwmapi.lib)
+
 target_precompile_headers(SpiderHook PUBLIC src/preCompiled.h)
 
 install(TARGETS SpiderHook LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX})

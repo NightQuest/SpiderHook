@@ -15,10 +15,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 			if( !hFaultRep )
 			{
 				// Load the dll in the system directory, so our calls can be forwarded
-				char tmp[MAX_PATH] = { 0 };
-				::GetSystemDirectory(tmp, MAX_PATH);
-				strcat_s(tmp, "\\faultrep.dll");
-				hFaultRep = ::LoadLibrary(tmp);
+				hFaultRep = ::LoadLibraryEx("faultrep.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
 
 				// Make sure we were able to load it
 				if( !hFaultRep )

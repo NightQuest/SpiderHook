@@ -1,6 +1,8 @@
 ﻿cmake_minimum_required(VERSION 3.24)
 project(SpiderHook)
 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 set(CMAKE_CXX_STANDARD 20)
 
 include_directories(src)

@@ -1,5 +1,6 @@
 #include "preCompiled.h"
 
+Application* Application::instance;
 Application::Application() : eng(Engine::getInstance())
 {
 	if( !instance )
@@ -22,7 +23,7 @@ Application* Application::getInstance()
 
 void Application::OnAttach()
 {
-	std::thread tmp(
+	std::thread(
 		[&]() {
 			do
 			{
@@ -33,12 +34,10 @@ void Application::OnAttach()
 				if( !hwnd )
 					continue;
 
-				char* ctmp = new char[MAX_PATH];
-				::GetWindowText(hwnd, ctmp, MAX_PATH);
-				std::string tmp(ctmp);
-				delete[] ctmp;
+				auto ptr = std::make_unique<char*>(new char[MAX_PATH+1]);
+				::GetWindowText(hwnd, *ptr, MAX_PATH);
 
-				if( !std::regex_match(tmp, std::regex(R"(^Marvel's Spider-Man Remastered v\d+\.\d+\.\d+\.\d+$)")) )
+				if( !std::regex_match(*ptr, std::regex(R"(^Marvel's Spider-Man Remastered v\d+\.\d+\.\d+\.\d+$)")) )
 					continue;
 
 				std::lock_guard lock(this->handle_mutex);
@@ -53,17 +52,13 @@ void Application::OnAttach()
 					if( ::RegQueryValueEx(hKey, "AppsUseLightTheme", nullptr, &dwType, reinterpret_cast<LPBYTE>(&dwAttrib), &dwSize) == ERROR_SUCCESS )
 					{
 						BOOL darkMode = !dwAttrib;
-						::DwmSetWindowAttribute(windowHandle, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkMode, sizeof(BOOL));
+						::DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkMode, sizeof(BOOL));
 					}
 					::RegCloseKey(hKey);
 				}
 
-				::SetWindowSubclass(this->windowHandle, staticWindowProc, ID_SUBCLASS, 0);
-
 			} while( !this->windowHandle );
-		});
-
-	tmp.detach();
+		}).detach();
 
 }
 
@@ -74,12 +69,4 @@ void Application::OnDetach()
 
 void Application::OnTick()
 {
-}
-
-LRESULT Application::staticWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, UINT_PTR ulSubclass, DWORD_PTR dwRefData)
-{
-	Application* app = getInstance();
-	app->OnTick();
-
-	return ::DefSubclassProc(hwnd, msg, wParam, lParam);
 }

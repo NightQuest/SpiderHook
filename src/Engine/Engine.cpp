@@ -20,6 +20,14 @@ Engine::Engine() : baseAddress(nullptr)
 
 Engine::~Engine()
 {
+	for( auto& [idx, val] : trampolines )
+	{
+		if( val.trampoline )
+		{
+			patchBytesCpy(val.originalFunction, *val.overwrittenBytes, val.overwrittenBytesSize);
+			::VirtualFree(val.trampoline, 1024, MEM_RELEASE);
+		}
+	}
 }
 
 Engine* Engine::getInstance()

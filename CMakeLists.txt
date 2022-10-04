@@ -6,6 +6,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_CXX_STANDARD 20)
 
 include_directories(src)
+include_directories(dep/capstone/include)
 
 set(base_files
 		src/Application.cpp
@@ -33,7 +34,10 @@ add_library(SpiderHook MODULE ${source_files})
 # Make sure the output filename is faultrep.dll
 set_target_properties(SpiderHook PROPERTIES OUTPUT_NAME "faultrep")
 
-target_link_libraries(SpiderHook PRIVATE Comctl32.lib dwmapi.lib)
+# Add capstone
+add_subdirectory(dep/capstone)
+
+target_link_libraries(SpiderHook PRIVATE capstone Comctl32.lib dwmapi.lib)
 
 target_precompile_headers(SpiderHook PUBLIC src/preCompiled.h)
 

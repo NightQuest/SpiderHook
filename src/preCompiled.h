@@ -15,6 +15,9 @@
 #include <mutex>
 #include <regex>
 
+// Dependencies
+#include "capstone/capstone.h"
+
 // Engine
 #include "Engine/Engine.h"
 

@@ -18,7 +18,7 @@ struct JMP_ABS
 };
 #pragma pack(pop)
 
-using fnFunc = void(*)(void);
+using fnFunc = void(__fastcall *)(void);
 struct trampolineInfo
 {
 	LPVOID originalFunction = nullptr;
@@ -26,6 +26,7 @@ struct trampolineInfo
 	LPVOID trampoline = nullptr;
 	fnFunc returnTrampoline = nullptr; // Dangerous right now
 	std::unique_ptr<uint8_t*> overwrittenBytes = nullptr;
+	size_t overwrittenBytesSize = 0;
 };
 
 class Engine
@@ -40,10 +41,11 @@ public:
 	// Utility functions
 	LPVOID RVAToPtr(LPVOID address);
 	LPVOID RVAToPtr(uintptr_t address);
-	static bool patchBytes(LPVOID dest, LPVOID src, size_t size);
+	static bool patchBytesCpy(LPVOID dest, LPVOID src, size_t size);
+	static bool patchBytesSet(LPVOID dest, uint8_t src, size_t size);
 
 	// Detour stuff
-	bool detourFunction(uint64_t id, LPVOID originalFunc, LPVOID newFunc);
+	bool detourFunction(uint64_t id, LPVOID originalFunc, LPVOID newFunc, bool preserveBytes);
 	trampolineInfo* getTrampoline(uint64_t id);
 
 private:

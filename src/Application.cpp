@@ -1,6 +1,30 @@
 #include "preCompiled.h"
 
 Application* Application::instance;
+
+enum DetourID
+{
+	DETOUR_WEB_ZIP = 0,
+};
+
+struct WebZip
+{
+	uint8_t unk[0x47];
+	uint32_t webZipCount;
+	uint64_t unk2;
+	float cooldown;
+};
+
+void WebZipCooldown(WebZip* self)
+{
+	self->webZipCount = 0;
+	self->cooldown = 0.f;
+
+	// Since we're changing the entire function, we don't need these
+	auto info = Engine::getInstance()->getTrampoline(DETOUR_WEB_ZIP);
+	reinterpret_cast<void(__fastcall*)(WebZip*)>(info->returnTrampoline)(self);
+}
+
 Application::Application() : eng(Engine::getInstance())
 {
 	if( !instance )
@@ -60,6 +84,7 @@ void Application::OnAttach()
 			} while( !this->windowHandle );
 		}).detach();
 
+	eng->detourFunction(DETOUR_WEB_ZIP, eng->RVAToPtr(0x09a5000), WebZipCooldown, false);
 }
 
 void Application::OnDetach()

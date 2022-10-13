@@ -84,7 +84,7 @@ void Application::OnAttach()
 			} while( !this->windowHandle );
 		}).detach();
 
-	eng->detourFunction(DETOUR_WEB_ZIP, eng->RVAToPtr(0x09a8d90), WebZipCooldown, false);
+	eng->detourFunction(DETOUR_WEB_ZIP, eng->RVAToPtr(0x09a8d50), WebZipCooldown, false);
 }
 
 void Application::OnDetach()
